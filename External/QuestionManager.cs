@@ -11,21 +11,13 @@ namespace TriviaBot.External
     {
         HttpClient client;
         Response response;
-        int numberOfQuestions = 10;
         public List<Question> questions;
 
-        public QuestionManager(int num)
-        {
-            numberOfQuestions = num;
-        }
-
-        public QuestionManager() { }
-
-        public async Task<int> GetQuestions()
+        public async Task<int> GetQuestions(int numberOfQuestions = 10)
         {
             client = new HttpClient();
 
-            string url = "https://opentdb.com/api.php?amount=" + numberOfQuestions + "&type=multiple";
+            string url = "https://opentdb.com/api.php?amount=" + numberOfQuestions + "&category=9&difficulty=easy&type=multiple";
             HttpResponseMessage urlResponse = await client.GetAsync(url);
 
             string json = await urlResponse.Content.ReadAsStringAsync();
