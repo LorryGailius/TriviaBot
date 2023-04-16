@@ -42,7 +42,7 @@ namespace TriviaBot.Commands
 
             Dictionary<DiscordUser, int> score = new Dictionary<DiscordUser, int>();
 
-            int responseCode = await questionManager.GetQuestions(5);
+            int responseCode = await questionManager.GetQuestions(10);
 
             if (responseCode != 0)
             {
@@ -52,7 +52,7 @@ namespace TriviaBot.Commands
 
             DiscordEmoji accept = DiscordEmoji.FromName(context.Client, ":white_check_mark:", false);
             TimeSpan timer = TimeSpan.FromSeconds(20);
-            int timeLeft = 10;
+            int timeLeft = 15;
 
             var joinMessage = new DiscordEmbedBuilder()
             {
@@ -86,6 +86,12 @@ namespace TriviaBot.Commands
                     count++;
                     score.Add(user, 0);
                 }
+            }
+
+            if(count == 0)
+            {
+                await context.Channel.SendMessageAsync(":red_square: **NO ONE JOINED THE GAME** :red_square:");
+                return;
             }
 
             foreach (Question question in questionManager.questions)
@@ -129,16 +135,21 @@ namespace TriviaBot.Commands
                     await discordMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(newmessage));
                 }
 
-                //Find index with correct answer
+                // Find index with correct answer
                 int correctIdx = answers.IndexOf(question.correct_answer);
 
+                // TODO: Check if user reacted to multiple answers
+                // Current method only checks if user reacted to correct answer
+                // CollectReactionsAsync() does not work for some reason
+                // Getting users seperately for each answer works but is not efficient
+                // Get users who reacted with correct answer
                 var correctUsers = await discordMessage.GetReactionsAsync(emoji[correctIdx]);
 
                 foreach (var user in correctUsers)
                 {
                     if (!user.IsBot)
                     {
-                        score[user] += 1;
+                        score[user]++;
                     }
                 }
 
@@ -146,10 +157,10 @@ namespace TriviaBot.Commands
 
                 await context.Channel.SendMessageAsync($"Correct answer was **{question.correct_answer}**");
 
-                await Task.Delay(3000);
+                await Task.Delay(1000);
             }
 
-            //Find user with highest score
+            // Find user with highest score
             var winner = score.Aggregate((l, r) => l.Value > r.Value ? l : r);
 
             var finalMessage = new DiscordEmbedBuilder()
@@ -159,6 +170,8 @@ namespace TriviaBot.Commands
             };
 
             await context.Channel.SendMessageAsync(embed: finalMessage);
+
+            return;
 
         }
     }
