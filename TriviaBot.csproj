@@ -145,6 +145,9 @@
     <Compile Include="Bot.cs" />
     <Compile Include="Commands\Essential.cs" />
     <Compile Include="ConfigJSON.cs" />
+    <Compile Include="External\Question.cs" />
+    <Compile Include="External\QuestionManager.cs" />
+    <Compile Include="External\Response.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
