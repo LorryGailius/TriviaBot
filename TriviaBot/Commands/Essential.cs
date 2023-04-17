@@ -42,7 +42,7 @@ namespace TriviaBot.Commands
 
             Dictionary<DiscordUser, int> score = new Dictionary<DiscordUser, int>();
 
-            int responseCode = await questionManager.GetQuestions(10);
+            int responseCode = await questionManager.GetQuestions(1);
 
             if (responseCode != 0)
             {
@@ -76,19 +76,17 @@ namespace TriviaBot.Commands
                 await sentInvite.ModifyAsync(new DiscordMessageBuilder().AddEmbed(newMessage));
             }
 
-            int count = 0;
             var joinReaction = await sentInvite.GetReactionsAsync(accept);
 
             foreach (var user in joinReaction)
             {
                 if (!user.IsBot)
                 {
-                    count++;
                     score.Add(user, 0);
                 }
             }
 
-            if(count == 0)
+            if(score.Count == 0)
             {
                 await context.Channel.SendMessageAsync(":red_square: **NO ONE JOINED THE GAME** :red_square:");
                 return;
@@ -98,7 +96,7 @@ namespace TriviaBot.Commands
             {
                 List<string> answers = new List<string>();
                 Random rng = new Random();
-                int time = 10;
+                int time = 5;
 
                 // Randomize answers
                 answers.Add(question.correct_answer);
@@ -160,13 +158,23 @@ namespace TriviaBot.Commands
                 await Task.Delay(1000);
             }
 
-            // Find user with highest score
-            var winner = score.Aggregate((l, r) => l.Value > r.Value ? l : r);
+            // Sort score dictionary by value
+            var sortedScore = score.OrderByDescending(x => x.Value);
 
+            string leaderboard = string.Empty;
+
+            foreach (var item in sortedScore)
+            {
+                leaderboard += $"{item.Key.Mention} : {item.Value} point(s)\n";
+            }
+
+            // Print leaderboard
             var finalMessage = new DiscordEmbedBuilder()
             {
                 Title = $"{DiscordEmoji.FromName(context.Client, ":orange_circle:", false)} **DISCORD TRIVIA** {DiscordEmoji.FromName(context.Client, ":orange_circle:", false)}",
-                Description = $"**The game has ended!\nWinner is: {winner.Key.Mention} with a score of {winner.Value}**",
+                Description = $"**The game has ended!\nWinner is: {sortedScore.First().Key.Mention}!**\n" +
+                $"\n**Leaderboard:**\n" +
+                $"{leaderboard}",
             };
 
             await context.Channel.SendMessageAsync(embed: finalMessage);
