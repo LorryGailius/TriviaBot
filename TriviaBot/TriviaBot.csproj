@@ -150,7 +150,7 @@
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="Commands\Essential.cs" />
-    <Compile Include="ConfigJSON.cs" />
+    <Compile Include="External\ConfigJSON.cs" />
     <Compile Include="External\Question.cs" />
     <Compile Include="External\QuestionManager.cs" />
     <Compile Include="External\Response.cs" />
