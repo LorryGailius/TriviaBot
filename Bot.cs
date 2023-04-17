@@ -54,9 +54,16 @@ namespace TriviaBot
 
             Commands.RegisterCommands<Essential>();
 
+            Commands.CommandErrored += Commands_CommandErrored;
 
             await Client.ConnectAsync();
             await Task.Delay(-1);
+        }
+
+        private Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs args)
+        {
+            Console.WriteLine($"[CommandErrored] {args.Exception.Message}");
+            return Task.CompletedTask;
         }
 
         private Task OnClientReady(ReadyEventArgs e)
