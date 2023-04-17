@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.5.33424.131
+VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TriviaBot", "TriviaBot.csproj", "{276D3A0B-0E25-4391-BCD4-45073080F1AF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TriviaBot", "TriviaBot\TriviaBot.csproj", "{276D3A0B-0E25-4391-BCD4-45073080F1AF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +20,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {9F078E33-8418-4136-9265-0560B358FB38}
+		SolutionGuid = {371EEA28-2EA8-431D-8704-A99F7F881C05}
 	EndGlobalSection
 EndGlobal
