@@ -34,15 +34,16 @@ namespace TriviaBot.Commands
         }
 
         [Command("trivia")]
-        public async Task StartTrivia(CommandContext context)
+        public async Task StartTrivia(CommandContext context, int numberOfQuestions = 10)
         {
+            Console.WriteLine($"{numberOfQuestions} questions");
             QuestionManager questionManager = new QuestionManager();
 
             var interactivity = context.Client.GetInteractivity();
 
             Dictionary<DiscordUser, int> score = new Dictionary<DiscordUser, int>();
 
-            int responseCode = await questionManager.GetQuestions(1);
+            int responseCode = await questionManager.GetQuestions(numberOfQuestions);
 
             if (responseCode != 0)
             {
@@ -86,7 +87,7 @@ namespace TriviaBot.Commands
                 }
             }
 
-            if(score.Count == 0)
+            if (score.Count == 0)
             {
                 await context.Channel.SendMessageAsync(":red_square: **NO ONE JOINED THE GAME** :red_square:");
                 return;
