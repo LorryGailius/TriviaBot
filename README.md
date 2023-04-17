@@ -9,7 +9,7 @@ Write ```!trivia``` to chat in order to initialize the bot
 Paste in your discord bot API key in the ```config.json``` file and put it in the build directory
 
 ## Known Issues
-+ If the user selects all answers it will give the user a point, because the bot only checks if the correct answer is selected ```CollectReactionsAsync()``` does not seem to work...
++ If the user selects all answers it will give the user a point, because the bot only checks if the correct answer is selected ```CollectReactionsAsync()``` [does not seem to work](https://github.com/DSharpPlus/DSharpPlus/issues/1542)
 
 ## To implement
 - [ ] Ability to choose category
