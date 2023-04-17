@@ -13,6 +13,13 @@ namespace TriviaBot.External
         Response response;
         public List<Question> questions;
 
+        Dictionary<string, int> categories = new Dictionary<string, int>(){
+        {"General knowledge", 9},
+        {"Cartoons", 32},
+        {"Video games", 15},
+        {"Movies", 11},
+        };
+
         public async Task<int> GetQuestions(int numberOfQuestions = 10)
         {
             client = new HttpClient();
