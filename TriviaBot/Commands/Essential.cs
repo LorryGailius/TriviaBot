@@ -43,9 +43,15 @@ namespace TriviaBot.Commands
             Dictionary<DiscordUser, int> players = new Dictionary<DiscordUser, int>();
             var interactivity = context.Client.GetInteractivity();
 
-            DiscordEmoji accept = DiscordEmoji.FromName(context.Client, ":white_check_mark:", false);
-            players = await GetPlayers(context, 15, accept);
+            // Assign title and description
+            // `timeLeft` is a placeholder for the time remaining to join the game
+            // `accept` is a placeholder for the emoji that the user will react with to join the game
+            string title = $"{DiscordEmoji.FromName(context.Client, ":orange_circle:", false)} **DISCORD TRIVIA** {DiscordEmoji.FromName(context.Client, ":orange_circle:", false)}";
+            string description = $"**To join the game please react with `joinEmoji`**\n**Good luck and have fun!**\n**Time remaining to join: `queueTimer` seconds!**";
 
+            DiscordEmoji accept = DiscordEmoji.FromName(context.Client, ":white_check_mark:", false);
+            players = await GetPlayers(context, 15, accept, title, description);
+            
             if (players.Count == 0)
             {
                 await context.Channel.SendMessageAsync(":red_square: **NO ONE JOINED THE GAME** :red_square:");
@@ -82,7 +88,7 @@ namespace TriviaBot.Commands
                 await Task.Delay(1000);
             }
 
-            await PrintLeaderboard(context, players);
+            await PrintLeaderboard(context, players, title);
             return;
         }
         
@@ -93,17 +99,17 @@ namespace TriviaBot.Commands
         /// <param name="queueTimer">How many seconds to wait for players to join</param>
         /// <param name="joinEmoji">What emoji represents a joined player</param>
         /// <returns>A dictionary of players and their scores</returns>
-        private async Task<Dictionary<DiscordUser, int>> GetPlayers(CommandContext context, int queueTimer, DiscordEmoji joinEmoji)
+        private async Task<Dictionary<DiscordUser, int>> GetPlayers(CommandContext context, int queueTimer, DiscordEmoji joinEmoji, string title, string description)
         {
             Dictionary<DiscordUser, int> players = new Dictionary<DiscordUser, int>();
 
-            string title = $"{DiscordEmoji.FromName(context.Client, ":orange_circle:", false)} **DISCORD TRIVIA** {DiscordEmoji.FromName(context.Client, ":orange_circle:", false)}";
-            string description = $"**To join the game please react with {joinEmoji}**\n**Good luck and have fun!**\n**Time remaining to join: queueTimer seconds!**";
+            string newDescription = description.Replace("`queueTimer`", queueTimer.ToString());
+            newDescription = newDescription.Replace("`joinEmoji`", joinEmoji);
 
             var joinMessage = new DiscordEmbedBuilder()
             {
                 Title = title,
-                Description = description.Replace("queueTimer", queueTimer.ToString()),
+                Description = newDescription,
             };
 
             var sentInvite = await context.Channel.SendMessageAsync(embed: joinMessage);
@@ -112,11 +118,13 @@ namespace TriviaBot.Commands
 
             for (int i = 0; i <= queueTimer; queueTimer--)
             {
+                newDescription = description.Replace("`queueTimer`", queueTimer.ToString());
+                newDescription = newDescription.Replace("`joinEmoji`", joinEmoji);
                 await Task.Delay(1000);
                 var newMessage = new DiscordEmbedBuilder()
                 {
                     Title = title,
-                    Description = description.Replace("queueTimer", queueTimer.ToString()),
+                    Description = newDescription,
                 };
                 await sentInvite.ModifyAsync(new DiscordMessageBuilder().AddEmbed(newMessage));
             }
@@ -157,13 +165,13 @@ namespace TriviaBot.Commands
             Random rng = new Random();
             answers = answers.OrderBy(x => rng.Next()).ToList();
 
-            string title = "{question}";
-            string description = $"{emoji[0]} | {answers[0]}\n\n" + $"{emoji[1]} | {answers[1]}\n\n" + $"{emoji[2]} | {answers[2]}\n\n" + $"{emoji[3]} | {answers[3]}\n\n" + $"Time remaining: questionTimer seconds";
+            string title = "`question`";
+            string description = $"{emoji[0]} | {answers[0]}\n\n" + $"{emoji[1]} | {answers[1]}\n\n" + $"{emoji[2]} | {answers[2]}\n\n" + $"{emoji[3]} | {answers[3]}\n\n" + $"Time remaining: `questionTimer` seconds";
 
             var questionMessage = new DiscordEmbedBuilder()
             {
-                Title = title.Replace("{question}", question.question),
-                Description = description.Replace("questionTimer", questionTimer.ToString()),
+                Title = title.Replace("`question`", question.question),
+                Description = description.Replace("`questionTimer`", questionTimer.ToString()),
             };
 
             var sentQuestion = await context.Channel.SendMessageAsync(questionMessage);
@@ -179,8 +187,8 @@ namespace TriviaBot.Commands
                 await Task.Delay(1000);
                 var newmessage = new DiscordEmbedBuilder()
                 {
-                    Title = title.Replace("{question}", question.question),
-                    Description = description.Replace("questionTimer", questionTimer.ToString()),
+                    Title = title.Replace("`question`", question.question),
+                    Description = description.Replace("`questionTimer`", questionTimer.ToString()),
                 };
                 await sentQuestion.ModifyAsync(new DiscordMessageBuilder().AddEmbed(newmessage));
             }
@@ -207,7 +215,7 @@ namespace TriviaBot.Commands
         /// </summary>
         /// <param name="context">Context gotten from Discord Command</param>
         /// <param name="players">A dictionary of players and their scores</param>
-        private async Task PrintLeaderboard(CommandContext context, Dictionary<DiscordUser, int> players)
+        private async Task PrintLeaderboard(CommandContext context, Dictionary<DiscordUser, int> players, string title)
         {
             // Create leaderboard string
             var sortedScore = players.OrderByDescending(x => x.Value);
@@ -226,7 +234,7 @@ namespace TriviaBot.Commands
             // Print leaderboard
             var finalMessage = new DiscordEmbedBuilder()
             {
-                Title = $"{DiscordEmoji.FromName(context.Client, ":orange_circle:", false)} **DISCORD TRIVIA** {DiscordEmoji.FromName(context.Client, ":orange_circle:", false)}",
+                Title = title,
                 Description = $"**The game has ended!\nWinner is: {sortedScore.First().Key.Mention}!**\n" +
                 $"\n**Leaderboard:**\n" +
                 $"{leaderboard}",
