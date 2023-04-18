@@ -26,13 +26,7 @@ namespace TriviaBot.Commands
         [Command("help")]
         public async Task ShowHelp(CommandContext context)
         {
-            var message = new DiscordEmbedBuilder()
-            {
-                Title = ":information_source: **DISCORD TRIVIA** :information_source:",
-                Description = "To play: the game type ***!trivia*** into the chat!\n ",
-            };
-
-            await context.Channel.SendMessageAsync(embed: message);
+            await context.Channel.SendMessageAsync("```\r\n!trivia <number_of_questions> - Start a trivia game, number_of_questions specifies how many questions there will be, defaults to 10\r\n!ping - pong \r\n```");
         }
 
         [Command("trivia")]
