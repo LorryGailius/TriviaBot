@@ -14,4 +14,4 @@ Paste in your discord bot API key in the ```config.json``` file and put it in th
 ## To implement
 - [ ] Ability to choose category
 - [ ] Fix correct answer checking
-- [ ] Ability to specify amount of questions
+- [x] Ability to specify amount of questions
