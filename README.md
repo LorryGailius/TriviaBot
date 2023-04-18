@@ -3,7 +3,11 @@ A simple discord bot which creates and runs a trivia game <br/>
 Bot was built using [DSharpPlus](https://github.com/DSharpPlus/DSharpPlus) for communications with the Discord api and [Open Trivia Database](https://opentdb.com/) for getting trivia questions
 
 ## How to use
-Write ```!trivia``` to chat in order to initialize the bot
+#### Commands:
+```
+!trivia <number_of_questions> - Start a trivia game, number_of_questions specifies how many questions there will be, defaults to 10
+!ping - pong
+```
 
 ## How to run
 Paste in your discord bot API key in the ```config.json``` file and put it in the build directory
