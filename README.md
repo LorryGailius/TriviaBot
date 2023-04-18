@@ -1,6 +1,12 @@
 # :orange_circle: TriviaBot :orange_circle:
 A simple discord bot which creates and runs a trivia game <br/>
 Bot was built using [DSharpPlus](https://github.com/DSharpPlus/DSharpPlus) for communications with the Discord api and [Open Trivia Database](https://opentdb.com/) for getting trivia questions
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/31960595/232910045-fafe695f-da68-47dc-a762-06196a7137b2.png">
+</p>
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/31960595/232910507-df167eda-6bb6-41b5-8d2a-7c46a528ffd0.png">
+</p>
 
 ## How to use
 #### Commands:
