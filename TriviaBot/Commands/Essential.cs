@@ -7,9 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using TriviaBot.External;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace TriviaBot.Commands
 {
@@ -37,10 +39,18 @@ namespace TriviaBot.Commands
         public async Task StartTrivia(CommandContext context, int numberOfQuestions = 10)
         {
             QuestionManager questionManager = new QuestionManager();
-
+            List<CategoryOption> categories = questionManager.GetCategories();
+            Dictionary<DiscordUser, int> players = new Dictionary<DiscordUser, int>();
             var interactivity = context.Client.GetInteractivity();
 
-            Dictionary<DiscordUser, int> score = new Dictionary<DiscordUser, int>();
+            DiscordEmoji accept = DiscordEmoji.FromName(context.Client, ":white_check_mark:", false);
+            players = await GetPlayers(context, 15, accept);
+
+            if (players.Count == 0)
+            {
+                await context.Channel.SendMessageAsync(":red_square: **NO ONE JOINED THE GAME** :red_square:");
+                return;
+            }
 
             int responseCode = await questionManager.GetQuestions(numberOfQuestions);
 
@@ -50,122 +60,167 @@ namespace TriviaBot.Commands
                 return;
             }
 
-            DiscordEmoji accept = DiscordEmoji.FromName(context.Client, ":white_check_mark:", false);
-            TimeSpan timer = TimeSpan.FromSeconds(20);
-            int timeLeft = 15;
+            DiscordEmoji[] emoji = {DiscordEmoji.FromName(context.Client, ":one:", false),
+                                                DiscordEmoji.FromName(context.Client, ":two:", false),
+                                                DiscordEmoji.FromName(context.Client, ":three:", false),
+                                                DiscordEmoji.FromName(context.Client, ":four:", false),};
+
+            int questionTime = 10;
+
+            foreach (Question question in questionManager.questions)
+            {
+                var correctPlayers = await DisplayQuestion(context, questionTime, question, emoji);
+
+                foreach(var player in correctPlayers)
+                {
+                    if(!player.IsBot)
+                    {
+                        players[player]++;
+                    }
+                }
+
+                await Task.Delay(1000);
+            }
+
+            await PrintLeaderboard(context, players);
+            return;
+        }
+        
+        /// <summary>
+        /// Displays message into discord for joining the game  
+        /// </summary>
+        /// <param name="context">Context gotten from Discord Command</param>
+        /// <param name="queueTimer">How many seconds to wait for players to join</param>
+        /// <param name="joinEmoji">What emoji represents a joined player</param>
+        /// <returns>A dictionary of players and their scores</returns>
+        private async Task<Dictionary<DiscordUser, int>> GetPlayers(CommandContext context, int queueTimer, DiscordEmoji joinEmoji)
+        {
+            Dictionary<DiscordUser, int> players = new Dictionary<DiscordUser, int>();
+
+            string title = $"{DiscordEmoji.FromName(context.Client, ":orange_circle:", false)} **DISCORD TRIVIA** {DiscordEmoji.FromName(context.Client, ":orange_circle:", false)}";
+            string description = $"**To join the game please react with {joinEmoji}**\n**Good luck and have fun!**\n**Time remaining to join: queueTimer seconds!**";
 
             var joinMessage = new DiscordEmbedBuilder()
             {
-                Title = $"{DiscordEmoji.FromName(context.Client, ":orange_circle:", false)} **DISCORD TRIVIA** {DiscordEmoji.FromName(context.Client, ":orange_circle:", false)}",
-                Description = $"**To join the game please react with {accept}**\n**Good luck and have fun!**\n**Time remaining to join: {timeLeft} seconds!**",
+                Title = title,
+                Description = description.Replace("queueTimer", queueTimer.ToString()),
             };
 
             var sentInvite = await context.Channel.SendMessageAsync(embed: joinMessage);
-            timeLeft--;
+            queueTimer--;
+            await sentInvite.CreateReactionAsync(joinEmoji);
 
-            await sentInvite.CreateReactionAsync(accept);
-
-            for (int i = 0; i <= timeLeft; timeLeft--)
+            for (int i = 0; i <= queueTimer; queueTimer--)
             {
                 await Task.Delay(1000);
                 var newMessage = new DiscordEmbedBuilder()
                 {
-                    Title = $"{DiscordEmoji.FromName(context.Client, ":orange_circle:", false)} **DISCORD TRIVIA** {DiscordEmoji.FromName(context.Client, ":orange_circle:", false)}",
-                    Description = $"**To join the game please react with {accept}**\n**Good luck and have fun!**\n**Time remaining to join: {timeLeft} seconds!**",
+                    Title = title,
+                    Description = description.Replace("queueTimer", queueTimer.ToString()),
                 };
                 await sentInvite.ModifyAsync(new DiscordMessageBuilder().AddEmbed(newMessage));
             }
 
-            var joinReaction = await sentInvite.GetReactionsAsync(accept);
+            var joinReaction = await sentInvite.GetReactionsAsync(joinEmoji);
 
             foreach (var user in joinReaction)
             {
                 if (!user.IsBot)
                 {
-                    score.Add(user, 0);
+                    players.Add(user, 0);
                 }
             }
 
-            if (score.Count == 0)
+            return players;
+        }
+
+        /// <summary>
+        /// Displays a question and waits for answers
+        /// </summary>
+        /// <param name="context">Context gotten from Discord Command</param>
+        /// <param name="questionTimer">How many seconds to wait for the question</param>
+        /// <param name="question">The question object</param>
+        /// <param name="emoji">Array of emojis to represent answering</param>
+        /// <returns>A list of players who answered correctly</returns>
+        private async Task<IReadOnlyList<DiscordUser>> DisplayQuestion(CommandContext context, int questionTimer, Question question, DiscordEmoji[] emoji)
+        {
+            List<string> answers = new List<string>();
+            answers.Add(question.correct_answer);
+            answers.AddRange(question.incorrect_answers);
+         
+            if(emoji.Length != answers.Count)
             {
-                await context.Channel.SendMessageAsync(":red_square: **NO ONE JOINED THE GAME** :red_square:");
-                return;
+                throw new Exception("Emoji and answers do not match");
             }
 
-            foreach (Question question in questionManager.questions)
+            // Shuffle answers
+            Random rng = new Random();
+            answers = answers.OrderBy(x => rng.Next()).ToList();
+
+            string title = "{question}";
+            string description = $"{emoji[0]} | {answers[0]}\n\n" + $"{emoji[1]} | {answers[1]}\n\n" + $"{emoji[2]} | {answers[2]}\n\n" + $"{emoji[3]} | {answers[3]}\n\n" + $"Time remaining: questionTimer seconds";
+
+            var questionMessage = new DiscordEmbedBuilder()
             {
-                List<string> answers = new List<string>();
-                Random rng = new Random();
-                int time = 10;
+                Title = title.Replace("{question}", question.question),
+                Description = description.Replace("questionTimer", questionTimer.ToString()),
+            };
 
-                // Randomize answers
-                answers.Add(question.correct_answer);
-                answers.AddRange(question.incorrect_answers);
-                answers = answers.OrderBy(x => rng.Next()).ToList();
+            var sentQuestion = await context.Channel.SendMessageAsync(questionMessage);
+            questionTimer--;
 
-                DiscordEmoji[] emoji = {DiscordEmoji.FromName(context.Client, ":one:", false),
-                                                DiscordEmoji.FromName(context.Client, ":two:", false),
-                                                DiscordEmoji.FromName(context.Client, ":three:", false),
-                                                DiscordEmoji.FromName(context.Client, ":four:", false),};
+            foreach(var em in emoji)
+            {
+                await sentQuestion.CreateReactionAsync(em);
+            }
 
-                var questionMessage = new DiscordEmbedBuilder()
+            for (int i = 0; i <= questionTimer; questionTimer--)
+            {
+                await Task.Delay(1000);
+                var newmessage = new DiscordEmbedBuilder()
                 {
-                    Title = $"{question.question}",
-                    Description = $"Time remaining: {time} seconds",
+                    Title = title.Replace("{question}", question.question),
+                    Description = description.Replace("questionTimer", questionTimer.ToString()),
                 };
-
-                var discordMessage = await context.Channel.SendMessageAsync(embed: questionMessage);
-                time--;
-
-                foreach (DiscordEmoji em in emoji)
-                {
-                    await discordMessage.CreateReactionAsync(em);
-                }
-
-                for (int i = 0; i <= time; time--)
-                {
-                    await Task.Delay(1000);
-                    var newmessage = new DiscordEmbedBuilder()
-                    {
-                        Title = $"{question.question}",
-                        Description = $"{emoji[0]} | {answers[0]}\n\n" + $"{emoji[1]} | {answers[1]}\n\n" + $"{emoji[2]} | {answers[2]}\n\n" + $"{emoji[3]} | {answers[3]}\n\n" + $"Time remaining: {time} seconds",
-                    };
-                    await discordMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(newmessage));
-                }
-
-                // Find index with correct answer
-                int correctIdx = answers.IndexOf(question.correct_answer);
-
-                // TODO: Check if user reacted to multiple answers
-                // Current method only checks if user reacted to correct answer
-                // CollectReactionsAsync() does not work for some reason
-                // Getting users seperately for each answer works but is not efficient
-                // Get users who reacted with correct answer
-                var correctUsers = await discordMessage.GetReactionsAsync(emoji[correctIdx]);
-
-                foreach (var user in correctUsers)
-                {
-                    if (!user.IsBot)
-                    {
-                        score[user]++;
-                    }
-                }
-
-                await Task.Delay(1000);
-
-                await context.Channel.SendMessageAsync($"Correct answer was **{question.correct_answer}**");
-
-                await Task.Delay(1000);
+                await sentQuestion.ModifyAsync(new DiscordMessageBuilder().AddEmbed(newmessage));
             }
 
-            // Sort score dictionary by value
-            var sortedScore = score.OrderByDescending(x => x.Value);
+            // Find index with correct answer
+            int correctIdx = answers.IndexOf(question.correct_answer);
 
+            // TODO: Check if user reacted to multiple answers
+            // Current method only checks if user reacted to correct answer
+            // CollectReactionsAsync() does not work for some reason
+            // Getting users seperately for each answer works but is not efficient
+            // Get users who reacted with correct answer
+            var correctUsers = await sentQuestion.GetReactionsAsync(emoji[correctIdx]);
+
+            await Task.Delay(1000);
+
+            await context.Channel.SendMessageAsync($"Correct answer was **{question.correct_answer}**");
+
+            return correctUsers;
+        }
+
+        /// <summary>
+        /// Prints the leaderboard at the end of the game
+        /// </summary>
+        /// <param name="context">Context gotten from Discord Command</param>
+        /// <param name="players">A dictionary of players and their scores</param>
+        private async Task PrintLeaderboard(CommandContext context, Dictionary<DiscordUser, int> players)
+        {
+            // Create leaderboard string
+            var sortedScore = players.OrderByDescending(x => x.Value);
             string leaderboard = string.Empty;
-
-            foreach (var item in sortedScore)
+            int i = 1;
+            foreach (var player in sortedScore)
             {
-                leaderboard += $"{item.Key.Mention} : {item.Value} point(s)\n";
+                if (i > 3)
+                {
+                    break;
+                }
+                leaderboard += $"{i}. {player.Key.Mention} - {player.Value} points\n";
+                i++;
             }
 
             // Print leaderboard
@@ -176,11 +231,8 @@ namespace TriviaBot.Commands
                 $"\n**Leaderboard:**\n" +
                 $"{leaderboard}",
             };
-
             await context.Channel.SendMessageAsync(embed: finalMessage);
-
-            return;
-
         }
+
     }
 }

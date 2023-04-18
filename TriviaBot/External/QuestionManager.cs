@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using DSharpPlus.Entities;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -13,13 +14,13 @@ namespace TriviaBot.External
         Response response;
         public List<Question> questions;
 
-        Dictionary<string, int> categories = new Dictionary<string, int>(){
-        {"General knowledge", 9},
-        {"Cartoons", 32},
-        {"Video games", 15},
-        {"Movies", 11},
+        public List<CategoryOption> categories = new List<CategoryOption>() {
+            new CategoryOption("General knowledge", 9, ""),
+            new CategoryOption("Cartoons", 32, ""),
+            new CategoryOption("Video games", 15, ""),
+            new CategoryOption("Movies", 11, ""),
         };
-
+        
         public async Task<int> GetQuestions(int numberOfQuestions = 10)
         {
             client = new HttpClient();
@@ -50,6 +51,11 @@ namespace TriviaBot.External
             }
 
             return 0;
+        }
+
+        public List<CategoryOption> GetCategories()
+        {
+            return categories;
         }
 
         public Question GetQuestion(int questionId)
