@@ -29,7 +29,7 @@ namespace TriviaBot.External
 
             string json = await urlResponse.Content.ReadAsStringAsync();
             response = JsonConvert.DeserializeObject<Response>(json);
-            
+
             if (response.response_code != 0)
             {
                 Console.WriteLine("Error: " + response.response_code);
@@ -42,7 +42,7 @@ namespace TriviaBot.External
                 question.question = WebUtility.HtmlDecode(question.question);
                 question.correct_answer = WebUtility.HtmlDecode(question.correct_answer);
                 List<string> decoded = new List<string>();
-                foreach(string answer in question.incorrect_answers)
+                foreach (string answer in question.incorrect_answers)
                 {
                     decoded.Add(WebUtility.HtmlDecode(answer));
                 }
@@ -54,7 +54,7 @@ namespace TriviaBot.External
 
         public Question GetQuestion(int questionId)
         {
-            if(response.results.Count > 0 && response.results.Count - 1 >= questionId) 
+            if (response.results.Count > 0 && response.results.Count - 1 >= questionId)
             {
                 return response.results[questionId];
             }

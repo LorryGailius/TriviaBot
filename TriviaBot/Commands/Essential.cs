@@ -36,7 +36,6 @@ namespace TriviaBot.Commands
         [Command("trivia")]
         public async Task StartTrivia(CommandContext context, int numberOfQuestions = 10)
         {
-            Console.WriteLine($"{numberOfQuestions} questions");
             QuestionManager questionManager = new QuestionManager();
 
             var interactivity = context.Client.GetInteractivity();
@@ -97,7 +96,7 @@ namespace TriviaBot.Commands
             {
                 List<string> answers = new List<string>();
                 Random rng = new Random();
-                int time = 5;
+                int time = 10;
 
                 // Randomize answers
                 answers.Add(question.correct_answer);
