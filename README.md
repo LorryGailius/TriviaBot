@@ -16,7 +16,7 @@ Bot was built using [DSharpPlus](https://github.com/DSharpPlus/DSharpPlus) for c
 ```
 
 ## How to run
-Paste in your discord bot API key in the ```config.json``` file and put it in the build directory
+Paste in your discord bot API key in the ```config.json``` file and put it in the same directory as the .exe
 
 ## Known Issues
 + If the user selects all answers it will give the user a point, because the bot only checks if the correct answer is selected ```CollectReactionsAsync()``` [does not seem to work](https://github.com/DSharpPlus/DSharpPlus/issues/1542)
